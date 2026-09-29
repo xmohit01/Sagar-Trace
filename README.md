@@ -1,16 +1,46 @@
-# React + Vite
+# Sagar Trace GIS 🌊🛰️
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Smart Identification of Marine Oil Spills & Polluting Vessels**
 
-Currently, two official plugins are available:
+Sagar Trace GIS is a maritime intelligence platform designed to detect marine oil spills and attribute them to the responsible vessels. Built for the **Smart India Hackathon (SIH) 2026** (Problem Statement: SIH26143 for NTRO), this system bridges the gap between satellite remote sensing and vessel tracking.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🎯 The Challenge
+Marine oil spills inflict severe damage on marine ecosystems, yet the polluting vessels often go undetected or unaccounted for. This project aims to leverage **Satellite Imagery (SAR/EO)** and **AIS (Automatic Identification System)** data to trace back the origin of a spill and rank the most probable suspect vessels.
 
-## React Compiler
+## ✨ Key Features
+- **Interactive Maritime Dashboard**: A highly responsive, map-based interface built on Leaflet and OpenStreetMap.
+- **Data Layering**: Toggle between Oil Slick geometries, AIS Vessel tracks, Backward Drift simulations, and Forward Forecasts.
+- **Lagrangian Backtracking**: Visualizes the simulated path of the oil slick back in time to identify its probable geographic origin based on wind and ocean currents.
+- **Evidence-Based Vessel Ranking**: Ranks suspected vessels using a multi-factor evidence matrix:
+  - 📍 **Spatial Match**: Was the vessel near the origin?
+  - 🕐 **Time Match**: Was it there during the release window?
+  - 🛤️ **Trajectory Match**: Does the vessel's path align with the spill?
+  - ⚓ **Behaviour Match**: Are there anomalous speed drops or maneuvers?
+  - 📡 **AIS Integrity**: Did the vessel turn off its transponder (AIS gaps)?
+- **Automated Data Pipeline UI**: Simulates the 7-stage processing pipeline from raw satellite feed to final suspect attribution.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Technology Stack
+- **Frontend**: React, Vite
+- **Mapping**: Leaflet, React-Leaflet
+- **Styling**: Modern Vanilla CSS (Glassmorphism, Dark Accents, Animations)
+- **Deployment**: Node.js environment
 
-## Expanding the ESLint configuration
+## 🚀 Running Locally
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. Clone the repository:
+   ```bash
+   git clone <your-repo-url>
+   cd sagar-trace-gis
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open your browser and navigate to `http://localhost:5173`.
+
+---
+*Developed for Smart India Hackathon 2026 | National Technical Research Organisation (NTRO)*
