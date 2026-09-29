@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -24,79 +24,46 @@ function MapClickHandler({ setSelectedVessel }) {
 }
 
 function App() {
-
   const [time, setTime] = useState(0);
+  const [vesselPositions, setVesselPositions] = useState(null);
+  const [vesselData, setVesselData] = useState(null);
+  const [spillData, setSpillData] = useState(null);
+  const [originData, setOriginData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // ── Coordinates: Arabian Sea near Mumbai coast (matching reference geography) ──
-  // Origin: 19.2°N 70.0°E  |  Slick (T0): drifted NE to ~19.4°N 70.3°E
-  const vesselPositions = {
-    // Vessel A — top suspect; AT origin at T–6h
-    A: {
-      "-8": [19.1, 69.85],
-      "-6": [19.2, 70.0],   // ← AT origin during release window
-      "-4": [19.3, 70.15],
-      "-2": [19.4, 70.3],
-      "0":  [19.5, 70.45],
-      "2":  [19.6, 70.6],
-      "4":  [19.7, 70.75]
-    },
-    // Vessel B — secondary; passed nearby
-    B: {
-      "-8": [19.6, 70.2],
-      "-6": [19.5, 70.1],
-      "-4": [19.4, 70.05],
-      "-2": [19.35, 70.15],
-      "0":  [19.4, 70.3],
-      "2":  [19.5, 70.5],
-      "4":  [19.6, 70.7]
-    },
-    // Vessel C — low suspicion; approaching from NE
-    C: {
-      "-8": [20.5, 71.5],
-      "-6": [20.35, 71.35],
-      "-4": [20.2, 71.2],
-      "-2": [20.05, 71.05],
-      "0":  [19.9, 70.9],
-      "2":  [19.75, 70.75],
-      "4":  [19.6, 70.6]
-    }
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [spillRes, posRes] = await Promise.all([
+          fetch('/api/spill'),
+          fetch('/api/positions')
+        ]);
+        
+        const spill = await spillRes.json();
+        const pos = await posRes.json();
 
-  const vesselActiveTimes = {
-    A: [-8, -6, -4, -2, 0, 2, 4],
-    B: [-8, -6, -4, -2, 0, 2, 4],
-    C: [-8, -6, -4, -2, 0, 2, 4]
-  };
+        setSpillData({
+          area: spill.area,
+          perimeter: spill.perimeter,
+          length: spill.length,
+          width: spill.width,
+          confidence: spill.confidence,
+          satellite: spill.satellite,
+          band: spill.band
+        });
+        
+        setOriginData(spill.origin);
+        setVesselPositions(pos.positions);
+        setVesselData(pos.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching data from API:", err);
+      }
+    };
+    fetchData();
+  }, []);
 
-  const vesselData = {
-    A: {
-      "-8": { speed: 10.2, heading: 042, distance:  36 },
-      "-6": { speed:  0.0, heading: 042, distance:   0 },  // stationary — AIS blackout
-      "-4": { speed: 10.8, heading: 046, distance:  37 },
-      "-2": { speed: 11.1, heading: 050, distance:  74 },
-      "0":  { speed: 11.4, heading: 052, distance: 118 },
-      "2":  { speed: 11.6, heading: 054, distance: 162 },
-      "4":  { speed: 11.8, heading: 056, distance: 206 }
-    },
-    B: {
-      "-8": { speed:  9.1, heading: 195, distance:  97 },
-      "-6": { speed:  9.3, heading: 200, distance:  72 },
-      "-4": { speed:  9.5, heading: 205, distance:  56 },
-      "-2": { speed:  9.7, heading: 210, distance:  57 },
-      "0":  { speed:  9.8, heading: 220, distance:  93 },
-      "2":  { speed: 10.0, heading: 228, distance: 138 },
-      "4":  { speed: 10.1, heading: 235, distance: 186 }
-    },
-    C: {
-      "-8": { speed: 11.5, heading: 220, distance: 330 },
-      "-6": { speed: 11.6, heading: 222, distance: 284 },
-      "-4": { speed: 11.8, heading: 224, distance: 238 },
-      "-2": { speed: 12.0, heading: 226, distance: 194 },
-      "0":  { speed: 12.1, heading: 228, distance: 184 },
-      "2":  { speed: 12.2, heading: 230, distance: 174 },
-      "4":  { speed: 12.3, heading: 232, distance: 162 }
-    }
-  };
+
 
   const vesselEvidence = {
     A: {
@@ -181,13 +148,10 @@ function App() {
   ];
 
 
-  // Origin data — single source of truth for INVESTIGATION panel
-  const originData = {
-    lat: 19.2,
-    lon: 70.0,
-    confidence: 78,
-    releaseStart: -8,
-    releaseEnd: -4
+  const vesselActiveTimes = {
+    A: [-8, -6, -4, -2, 0, 2, 4],
+    B: [-8, -6, -4, -2, 0, 2, 4],
+    C: [-8, -6, -4, -2, 0, 2, 4]
   };
 
   // Distinct per-vessel track colors (also reinforce ranking visually)
@@ -215,6 +179,13 @@ function App() {
   const [showOrigin, setShowOrigin] = useState(true);
   const [selectedVessel, setSelectedVessel] = useState(null);
   const [showPipeline, setShowPipeline] = useState(false);   // Item 5 — pipeline modal
+  if (loading || !spillData || !originData || !vesselPositions) {
+    return <div style={{ color: 'white', padding: '2rem', textAlign: 'center', marginTop: '20vh' }}>
+      <h2>Loading Sagar Trace GIS...</h2>
+      <p>Fetching satellite and maritime tracking data from the database.</p>
+    </div>;
+  }
+
   const selectedData = selectedVessel ? vesselData[selectedVessel][String(time)] : null;
 
   const getEvidenceClass = (value) => {
@@ -299,23 +270,11 @@ function App() {
     }))
     .sort((a, b) => b.score - a.score);
 
-  // ── Spill Geometry & Age ──────────────────────────────
-  const spillData = {
-    area:      42.6,         // km² from SAR polygon
-    perimeter:  26.3,        // km
-    length:     11.4,        // km (major axis)
-    width:      5.8,         // km (minor axis)
-    confidence: 91,      // % detection confidence
-    satellite: "Sentinel-1 SAR",
-    band: "C-Band (5.4 GHz)",
-    releaseWindowStart: -8,  // hours relative to T0
-    releaseWindowEnd: -4
-  };
-
   // Age = how long ago the spill was released, relative to current investigation time
   const getSlickAge = () => {
-    const minAge = Math.max(0, time - spillData.releaseWindowEnd);   // time + 4
-    const maxAge = time - spillData.releaseWindowStart;              // time + 8
+    if (!originData) return "Loading...";
+    const minAge = Math.max(0, time - originData.releaseEnd);   // time + 4
+    const maxAge = time - originData.releaseStart;              // time + 8
     if (maxAge <= 0) return "< 1h";
     if (minAge === 0) return `0\u2013${maxAge}h`;
     return `${minAge}\u2013${maxAge}h`;
